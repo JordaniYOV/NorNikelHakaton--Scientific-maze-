@@ -3,7 +3,8 @@ from sqlalchemy.orm import sessionmaker
 from neo4j import GraphDatabase
 from qdrant_client import QdrantClient
 import redis
-from ..core.config import settings
+
+from app.core.config import settings
 
 
 # PostgreSQL

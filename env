@@ -1,0 +1,23 @@
+# Database
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/kg_mvp
+
+# Neo4j
+NEO4J_URI=bolt://localhost:7687
+NEO4J_USER=neo4j
+NEO4J_PASSWORD=password
+
+# Qdrant
+QDRANT_HOST=localhost
+QDRANT_PORT=6333
+
+# Redis
+REDIS_URL=redis://localhost:6379/0
+
+# OpenAI (опционально, для извлечения сущностей)
+OPENAI_API_KEY=your-key-here
+
+# Uploads
+UPLOAD_DIR=./uploads/raw
+
+# App
+DEBUG=true

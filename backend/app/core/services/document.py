@@ -1,9 +1,9 @@
 """Сервис управления документами"""
 import os
-from typing import Optional
+
 from uuid import UUID
 from sqlalchemy.orm import Session
-from app.core.models import Document, DocumentStatus, ProcessingTask, TaskStatus
+from app.core.models import Document, DocumentStatus, Chunk, Entity, Relation, ProcessingTask, TaskStatus
 from app.core.schemas import DocumentStatusResponse, DocumentListResponse
 
 

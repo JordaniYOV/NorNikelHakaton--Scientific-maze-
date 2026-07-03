@@ -1,9 +1,9 @@
 """API endpoints для поиска и ответов"""
 
 from fastapi import APIRouter, HTTPException
-from app.core.schemas import SearchRequest, SearchResponse, AnswerRequest, AnswerResponse, GraphResponse
-from app.core.services.search import search_service
-from app.core.services.graph import graph_service
+from ...core.schemas import SearchRequest, SearchResponse, AnswerRequest, AnswerResponse, GraphResponse
+from ...core.services.search import search_service
+from ...core.services.graph import graph_service
 
 
 router = APIRouter(prefix="/search", tags=["search"])

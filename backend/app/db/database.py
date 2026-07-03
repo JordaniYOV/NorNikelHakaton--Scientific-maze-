@@ -4,7 +4,7 @@ from neo4j import GraphDatabase
 from qdrant_client import QdrantClient
 import redis
 
-from app.core.config import settings
+from ..core.config import settings
 
 
 # PostgreSQL

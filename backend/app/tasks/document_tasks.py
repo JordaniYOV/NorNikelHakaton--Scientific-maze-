@@ -3,14 +3,14 @@ import asyncio
 from uuid import UUID
 from celery import shared_task
 
-from app.db.database import SessionLocal
-from app.core.models import Document, DocumentStatus, Chunk, Relation, Entity
-from app.core.services.document import document_service
-from app.core.services.parser import ParserService
-from app.core.services.extraction import extraction_service
-from app.core.services.indexing import indexing_service
-from app.core.services.graph import graph_service
-from app.utils.chunker import chunk_document
+from ..db.database import SessionLocal
+from ..core.models import Document, DocumentStatus, Chunk, Relation, Entity
+from ..core.services.document import document_service
+from ..core.services.parser import ParserService
+from ..core.services.extraction import extraction_service
+from ..core.services.indexing import indexing_service
+from ..core.services.graph import graph_service
+from ..utils.chunker import chunk_document
 
 
 @shared_task(bind=True, max_retries=3)

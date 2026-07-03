@@ -2,7 +2,7 @@ import os
 import uuid
 from pathlib import Path
 import pdfplumber
-from app.core.config import settings
+from ...core.config import settings
 
 
 class ParserService:

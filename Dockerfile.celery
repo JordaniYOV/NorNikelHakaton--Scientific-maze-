@@ -1,0 +1,33 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY requirements/celery.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY backend/ backend/
+
+ENV PYTHONPATH=/app
+
+RUN mkdir -p /app/logsFROM python:3.11-slim
+
+WORKDIR /app
+
+# Копируем зависимости
+COPY requirements/celery.txt requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Копируем ВСЮ папку backend
+COPY backend/ backend/
+
+# Устанавливаем PYTHONPATH, чтобы Python видел модули
+ENV PYTHONPATH=/app
+
+# Создаем папки
+RUN mkdir -p /app/logs /app/uploads
+
+# Проверяем структуру (для отладки)
+RUN ls -la /app/ && ls -la /app/backend/app/tasks/
+
+# Команда запуска
+CMD ["celery", "-A", "backend.app.tasks.celery_app", "worker", "--loglevel=info"]

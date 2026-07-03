@@ -1,9 +1,11 @@
 import uuid
+
 from typing import  Any
 from qdrant_client.models import PointStruct, Distance, VectorParams
-from sentence_transformers import SentenceTransformer
-from app.core.config import settings
-from app.db.database import qdrant_client
+
+from ...core.config import settings
+from ...db.database import qdrant_client
+from ...agents.yandex_llm import yandex_llm
 
 
 class IndexingService:
@@ -11,21 +13,9 @@ class IndexingService:
     
     def __init__(self):
         self.collection_name = settings.QDRANT_COLLECTION
-        self.model = None
-        self._init_model()
+        self.model = yandex_llm
+        self.vector_size = 1024
         self._ensure_collection()
-    
-    def _init_model(self):
-        """Инициализация модели эмбеддингов"""
-        try:
-            # BGE-M3 — мультиязычная, поддерживает русский
-            self.model = SentenceTransformer('BAAI/bge-m3')
-            print("Модель BGE-M3 загружена")
-        except Exception as e:
-            print(f"Ошибка загрузки BGE-M3: {e}")
-            # Fallback на более лёгкую модель
-            self.model = SentenceTransformer('sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2')
-            print("Используется fallback модель")
     
     def _ensure_collection(self):
         """Убедиться, что коллекция существует"""
@@ -46,11 +36,18 @@ class IndexingService:
         """Получить векторное представление текста"""
         if self.model is None:
             raise RuntimeError("Модель эмбеддингов не инициализирована")
-        
-        # BGE-M3 рекомендует префикс для retrieval
-        instruction = "Represent this sentence for searching relevant passages: "
-        embedding = self.model.encode(instruction + text, normalize_embeddings=True)
-        return embedding.tolist()
+        try:
+            embedding = self.model.embeddings(text)
+
+            import math
+            norm = math.sqrt(sum(x*x for x in embedding))
+            if norm > 0:
+                embedding = [x / norm for x in embedding]
+
+            return embedding
+        except Exception as e:
+            print(f"Ошибка получения эмбеддинга: {e}")
+            raise
     
     def index_chunks(self, doc_id: str, chunks: list[dict[str, Any]]) -> list[str]:
         """
@@ -142,6 +139,18 @@ class IndexingService:
             )
         )
 
+    def get_collection_stats(self) -> dict[str, Any]:
+        """Получить статистику коллекции"""
+        try:
+            info = qdrant_client.get_collection(self.collection_name)
+            return {
+                "vectors_count": info.vectors_count,
+                "indexed_vectors_count": info.indexed_vectors_count,
+                "points_count": info.points_count,
+                "status": info.status
+            }
+        except Exception as e:
+            return {"error": str(e)}
 
 
 indexing_service = IndexingService()

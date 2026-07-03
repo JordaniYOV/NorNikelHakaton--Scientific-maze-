@@ -1,8 +1,8 @@
 """Главный файл приложения FastAPI"""
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.db.database import engine, init_qdrant_collection
-from app.api.routes import documents, search, graph
+from .db.database import engine, init_qdrant_collection
+from .api.routes import documents, search, graph
 
 
 # Инициализация Qdrant

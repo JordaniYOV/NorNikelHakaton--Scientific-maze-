@@ -1,5 +1,5 @@
 import re
-from app.core.config import settings
+from ..core.config import settings
 
 
 def split_by_headers(text: str) -> list[str]:

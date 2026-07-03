@@ -3,8 +3,8 @@ import os
 
 from uuid import UUID
 from sqlalchemy.orm import Session
-from app.core.models import Document, DocumentStatus, Chunk, Entity, Relation, ProcessingTask, TaskStatus
-from app.core.schemas import DocumentStatusResponse, DocumentListResponse
+from ...core.models import Document, DocumentStatus, ProcessingTask, TaskStatus
+from ...core.schemas import DocumentStatusResponse, DocumentListResponse
 
 
 class DocumentService:
@@ -25,12 +25,12 @@ class DocumentService:
         return doc
     
     @staticmethod
-    def get_document(db: Session, doc_id: UUID) -> Optional[Document]:
+    def get_document(db: Session, doc_id: UUID) -> Document | None:
         """Получить документ по ID"""
         return db.query(Document).filter(Document.id == doc_id).first()
     
     @staticmethod
-    def list_documents(db: Session, status: Optional[DocumentStatus] = None,
+    def list_documents(db: Session, status: DocumentStatus | None = None,
                        skip: int = 0, limit: int = 100) -> DocumentListResponse:
         """Список документов с фильтрацией"""
         query = db.query(Document)
@@ -57,7 +57,7 @@ class DocumentService:
     
     @staticmethod
     def update_status(db: Session, doc_id: UUID, status: DocumentStatus,
-                      error_message: Optional[str] = None):
+                      error_message: str | None = None):
         """Обновить статус документа"""
         doc = db.query(Document).filter(Document.id == doc_id).first()
         if doc:

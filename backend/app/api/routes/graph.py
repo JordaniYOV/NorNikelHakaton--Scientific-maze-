@@ -1,9 +1,9 @@
 """API endpoints для работы с графом знаний"""
 from fastapi import APIRouter, HTTPException
 
-from app.core.schemas import GraphResponse, GraphQueryRequest, GraphNode
-from app.core.services.graph import graph_service
-from app.db.database import neo4j_conn
+from ...core.schemas import GraphResponse, GraphQueryRequest, GraphNode
+from ...core.services.graph import graph_service
+from ...db.database import neo4j_conn
 
 
 router = APIRouter(prefix="/graph", tags=["graph"])

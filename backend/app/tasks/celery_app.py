@@ -1,12 +1,12 @@
 """Конфигурация Celery"""
 from celery import Celery
-from app.core.config import settings
+from ..core.config import settings
 
 celery_app = Celery(
     "kg_mvp",
     broker=settings.REDIS_URL,
     backend=settings.REDIS_URL,
-    include=["app.tasks.document_tasks"]
+    include=["backend.app.tasks.document_tasks"]
 )
 
 celery_app.conf.update(
@@ -19,3 +19,8 @@ celery_app.conf.update(
     task_time_limit=3600,  # 1 час максимум
     worker_prefetch_multiplier=1,  # По одной задаче за раз
 )
+
+celery_app.autodiscover_tasks(['backend.app.tasks'])
+
+if __name__ == '__main__':
+    celery_app.start()

@@ -5,8 +5,9 @@ import asyncio
 from typing import Any
 from dataclasses import dataclass, field
 from enum import Enum
-import httpx
-from app.core.config import settings
+
+from backend.app.agents import yandex_llm
+
 
 
 class TaskType(Enum):
@@ -48,8 +49,8 @@ class ReasoningTrace:
 
 class RLM:
     def __init__(self):
-        self.api_key = settings.OPENAI_API_KEY
-        self.model = "gpt-4o-mini"
+        self.llm = yandex_llm
+        self.system_prompt = "Ты — компонент рекурсивной системы мышления для анализа горно-металлургических данных. Отвечай ТОЛЬКО валидным JSON без пояснений."
         self.trace = ReasoningTrace()
         self.max_depth = 3
         self.max_substacks = 10
@@ -91,7 +92,7 @@ class RLM:
     async def _analyze_complexity(self, query: str, context: dict) -> dict[str, Any]:
         prompt = f'''Ты — оркестратор интеллектуальной системы. Проанализируй запрос и реши, требуется ли его разбиение на подзадачи.
 
-Запрос: "{query}"
+Запрос: {query}
 
 Контекст: {json.dumps(context, ensure_ascii=False)[:500]}
 
@@ -109,12 +110,15 @@ class RLM:
 - needs_decomposition = true, если требуется агрегация из нескольких источников
 - needs_decomposition = false, если это простой фактический поиск
 '''
-        response = await self._call_llm(prompt, temperature=0.1)
-        
         try:
-            data = json.loads(self._extract_json(response))
-            return data
-        except :
+            response = await self.llm.chat_completion_json(
+                system_prompt=self.system_prompt, 
+                user_prompt=prompt,
+                temperature=0.1
+            )
+            return response
+        except Exception as e:
+            print(f"Ошибка оцениу сложности {e}")
             needs = any(kw in query.lower() for kw in 
                        ["сравни", "все", "оптимальн", "пробел", "и ", "какие методы"])
             return {
@@ -157,12 +161,14 @@ class RLM:
 
 Максимум {self.max_substacks} подзадач.
 '''
-        response = await self._call_llm(prompt, temperature=0.2)
-        
         try:
-            data = json.loads(self._extract_json(response))
+            response = await self.llm.chat_completion_json(
+                system_prompt=self.system_prompt, 
+                user_prompt=prompt,
+                temperature=0.2
+            )
             subtasks = []
-            for i, st in enumerate(data.get("subtasks", [])):
+            for i, st in enumerate(response.get("subtasks", [])):
                 subtasks.append(SubTask(
                     id=st.get("id", f"task_{i}"),
                     type=TaskType(st.get("type", "search")),
@@ -248,10 +254,14 @@ class RLM:
     "refinement_query": ""
 }}
 '''
-        response = await self._call_llm(prompt, temperature=0.1)
+        
         
         try:
-            analysis = json.loads(self._extract_json(response))
+            analysis = await yandex_llm.chat_completion_json(
+                system_prompt=self.system_prompt,
+                user_prompt=prompt,
+                temperature=0.1
+            )
         except:
             analysis = {"sufficient": True, "key_findings": [], "needs_refinement": False}
         
@@ -264,7 +274,7 @@ class RLM:
                 parent_id=task.id,
                 depth=task.depth + 1
             )
-            if refined_task.depth < self.max_deth:
+            if refined_task.depth < self.max_depth:
                 refined_result = await self._sub_search(refined_task, context)
                 search_result["results"].extend(refined_result.get("results", []))
         
@@ -280,7 +290,7 @@ class RLM:
         source_data = task.context.get("source_data", [])
         what_to_extract = task.context.get("extract", "все числовые параметры")
         
-        prompt = f'''Ты — извлекатель данных. Извлеки из текста конкретную информацию.
+        prompt = f'''Извлеки конкретную информацию.
 
 Что извлечь: {what_to_extract}
 
@@ -295,10 +305,12 @@ class RLM:
     "confidence": 0.9
 }}
 '''
-        response = await self._call_llm(prompt, temperature=0.1)
-        
         try:
-            return json.loads(self._extract_json(response))
+            return await yandex_llm.chat_completion_json(
+                system_prompt=self.system_prompt,
+                user_prompt=prompt,
+                temperature=0.1
+            )
         except:
             return {"extracted": [], "confidence": 0}
     
@@ -320,13 +332,15 @@ class RLM:
     "reasoning": "почему"
 }}
 '''
-        response = await self._call_llm(prompt, temperature=0.2)
-        
         try:
-            return json.loads(self._extract_json(response))
+            return await yandex_llm.chat_completion_json(
+                system_prompt=self.system_prompt,
+                user_prompt=prompt,
+                temperature=0.2
+            )
         except:
             return {"comparison_table": [], "winner": "unknown", "reasoning": "error"}
-    
+        
     async def _sub_verify(self, task: SubTask, context: dict) -> dict[str, Any]:
         facts = task.context.get("facts", [])
         
@@ -343,10 +357,13 @@ class RLM:
     "recommendation": ""
 }}
 '''
-        response = await self._call_llm(prompt, temperature=0.1)
         
         try:
-            return json.loads(self._extract_json(response))
+            return await yandex_llm.chat_completion_json(
+                system_prompt=self.system_prompt,
+                user_prompt=prompt,
+                temperature=0.1
+            )
         except:
             return {"verified": False, "contradictions": [], "uncertain": [], "recommendation": ""}
     
@@ -370,10 +387,12 @@ class RLM:
     "coverage_percent": 75
 }}
 '''
-        response = await self._call_llm(prompt, temperature=0.2)
-        
         try:
-            return json.loads(self._extract_json(response))
+            return await yandex_llm.chat_completion_json(
+                system_prompt=self.system_prompt,
+                user_prompt=prompt,
+                temperature=0.2
+            )
         except:
             return {"gaps": [], "coverage_percent": 0}
     
@@ -394,10 +413,12 @@ class RLM:
     "strategy": "описание стратегии"
 }}
 '''
-        response = await self._call_llm(prompt, temperature=0.3)
-        
         try:
-            return json.loads(self._extract_json(response))
+            return await yandex_llm.chat_completion_json(
+                system_prompt=self.system_prompt,
+                user_prompt=prompt,
+                temperature=0.3
+            )
         except:
             return {"refined_queries": [original_query], "strategy": "no change"}
     
@@ -425,10 +446,12 @@ class RLM:
     "reasoning": "почему"
 }}
 '''
-        response = await self._call_llm(prompt, temperature=0.1)
-        
         try:
-            return json.loads(self._extract_json(response))
+            return await yandex_llm.chat_completion_json(
+                system_prompt=self.system_prompt,
+                user_prompt=prompt,
+                temperature=0.1
+            )
         except:
             return {
                 "sufficient": len(all_findings) > 0,
@@ -525,10 +548,15 @@ class RLM:
     }}
 }}
 '''
-        response = await self._call_llm(prompt, temperature=0.2)
-        
         try:
-            data = json.loads(self._extract_json(response))
+            data = await yandex_llm.chat_completion_json(
+                system_prompt=self.system_prompt,
+                user_prompt=prompt,
+                temperature=0.2
+            )
+            if "error" in data and data["error"] != "parse_failed":
+                raise RuntimeError(data["error"])
+            
             return {
                 "text": data.get("text", "Не удалось сформировать ответ"),
                 "confidence": data.get("confidence", 0.5),
@@ -543,7 +571,6 @@ class RLM:
                 "sources": unique_sources[:5],
                 "structure": {}
             }
-    
     async def _direct_answer(self, query: str, context: dict) -> dict[str, Any]:
         from app.core.services.search import search_service
         
@@ -563,10 +590,12 @@ class RLM:
     "confidence": 0.8
 }}
 '''
-        response = await self._call_llm(prompt, temperature=0.1)
-        
         try:
-            data = json.loads(self._extract_json(response))
+            data = await yandex_llm.chat_completion_json(
+                system_prompt=self.system_prompt,
+                user_prompt=prompt,
+                temperature=0.1
+            )
             return {
                 "answer": data.get("text", "Ответ не найден"),
                 "sources": [{"doc_id": r.get("doc_id"), "text": r.get("text", "")[:300]} 
@@ -586,49 +615,22 @@ class RLM:
                 "subtasks_executed": 1
             }
     
-    async def _call_llm(self, prompt: str, temperature: float = 0.1) -> str:
-        if not self.api_key:
-            return '{"error": "no API key"}'
+    async def _fallback_solve(self, query: str, context: dict) -> dict[str, Any]:
+        """Fallback когда Yandex API недоступен"""
+        from app.core.services.search import search_service
         
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            response = await client.post(
-                "https://api.openai.com/v1/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {self.api_key}",
-                    "Content-Type": "application/json"
-                },
-                json={
-                    "model": self.model,
-                    "messages": [
-                        {"role": "system", "content": "Ты — компонент рекурсивной системы мышления. Отвечай ТОЛЬКО валидным JSON."},
-                        {"role": "user", "content": prompt}
-                    ],
-                    "temperature": temperature,
-                    "max_tokens": 2000
-                }
-            )
-            response.raise_for_status()
-            data = response.json()
-            return data["choices"][0]["message"]["content"]
-    
-    def _extract_json(self, text: str) -> str:
-        text = text.strip()
+        search_result = await search_service.search(query, top_k=5)
+        texts = [r["text"][:500] for r in search_result.get("results", [])]
         
-        if text.startswith("```json"):
-            text = text[7:]
-        if text.startswith("```"):
-            text = text[3:]
-        if text.endswith("```"):
-            text = text[:-3]
-        
-        text = text.strip()
-        
-        start = text.find("{")
-        end = text.rfind("}") + 1
-        if start >= 0 and end > start:
-            return text[start:end]
-        
-        return text
+        return {
+            "answer": "\n\n".join(texts) if texts else "API недоступно, данные не найдены",
+            "sources": [{"doc_id": r.get("doc_id"), "text": r.get("text", "")[:300]} 
+                       for r in search_result.get("results", [])[:5]],
+            "reasoning": "Fallback mode — Yandex API не настроен",
+            "confidence": 0.2,
+            "gaps": ["Yandex API не доступен"],
+            "subtasks_executed": 0
+        }
 
 
 rlm = RLM()

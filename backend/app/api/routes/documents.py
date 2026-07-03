@@ -2,12 +2,12 @@
 from uuid import UUID
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
-from app.db.database import get_db
-from app.core.models import DocumentStatus
-from app.core.schemas import DocumentUploadResponse, DocumentStatusResponse, DocumentListResponse
-from app.core.services.document import document_service
-from app.core.services.parser import ParserService
-from app.tasks.document_tasks import process_document, delete_document_task
+from ...db.database import get_db
+from ...core.models import DocumentStatus
+from ...core.schemas import DocumentUploadResponse, DocumentStatusResponse, DocumentListResponse
+from ...core.services.document import document_service
+from ...core.services.parser import ParserService
+from ...tasks.document_tasks import process_document, delete_document_task
 
 
 router = APIRouter(prefix="/documents", tags=["documents"])

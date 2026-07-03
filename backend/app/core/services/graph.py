@@ -1,7 +1,7 @@
 """Сервис работы с графом Neo4j"""
 from typing import Any
-from app.db.database import neo4j_conn
-from app.utils.synonymus import normalize_entity
+from ...db.database import neo4j_conn
+from ...utils.synonymus import normalize_entity
 
 
 class GraphService:

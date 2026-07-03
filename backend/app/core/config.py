@@ -19,7 +19,10 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379/0"
     
     # OpenAI
-    OPENAI_API_KEY: str = ""
+    YANDEX_API_KEY: str = ""
+    YANDEX_FOLDER_ID: str = ""
+    YANDEX_BASE_URL: str = ""
+    YANDEX_MODEL: str = ""
     
     # Uploads
     UPLOAD_DIR: str = "./uploads/raw"

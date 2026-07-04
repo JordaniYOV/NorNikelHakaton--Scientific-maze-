@@ -1,10 +1,10 @@
 """API endpoints для поиска и ответов"""
 
 from fastapi import APIRouter, HTTPException
+
 from ...core.schemas import SearchRequest, SearchResponse, AnswerRequest, AnswerResponse, GraphResponse
 from ...core.services.search import search_service
-from ...core.services.graph import graph_service
-
+from ...core.services.rlm import rlm
 
 router = APIRouter(prefix="/search", tags=["search"])
 
@@ -29,40 +29,43 @@ def answer(request: AnswerRequest):
     Полный ответ на вопрос с источниками и графом.
     MVP-реализация: поиск + простая агрегация.
     """
-    # Поиск фактов
-    search_result = search_service.search(request.query, top_k=10)
+    return rlm.solve(request.query)
+
+    # # Поиск фактов
+    # search_result = search_service.search(request.query, top_k=10)
     
-    # Формируем контекст для ответа
-    facts = []
-    sources = []
+    # # Формируем контекст для ответа
+    # facts = []
+    # sources = []
     
-    for r in search_result["results"]:
-        facts.append(r["text"])
-        sources.append({
-            "doc_id": r["doc_id"],
-            "text": r["text"][:300],
-            "chunk_index": r["chunk_index"],
-            "score": r["score"]
-        })
+    # for r in search_result["results"]:
+    #     facts.append(r["text"])
+    #     sources.append({
+    #         "doc_id": r["doc_id"],
+    #         "text": r["text"][:300],
+    #         "chunk_index": r["chunk_index"],
+    #         "score": r["score"]
+    #     })
     
-    # Простой ответ для MVP (без LLM-синтеза, чтобы не зависеть от API)
-    answer_text = _simple_synthesize(request.query, search_result["results"])
+
+    # # Простой ответ для MVP (без LLM-синтеза, чтобы не зависеть от API)
+    # answer_text = _simple_synthesize(request.query, search_result["results"])
+ 
+    # # Граф связанных сущностей
+    # graph = None
+    # if request.include_graph and search_result.get("query_entities"):
+    #     graph = graph_service.get_subgraph_for_entities(
+    #         search_result["query_entities"],
+    #         depth=2
+    #     )
     
-    # Граф связанных сущностей
-    graph = None
-    if request.include_graph and search_result.get("query_entities"):
-        graph = graph_service.get_subgraph_for_entities(
-            search_result["query_entities"],
-            depth=2
-        )
-    
-    return AnswerResponse(
-        answer=answer_text,
-        sources=sources,
-        related_entities=[{"name": e} for e in search_result.get("query_entities", [])],
-        gaps=_detect_gaps(search_result),
-        graph=GraphResponse(**graph) if graph else None
-    )
+    # return AnswerResponse(
+    #     answer=answer_text,
+    #     sources=sources,
+    #     related_entities=[{"name": e} for e in search_result.get("query_entities", [])],
+    #     gaps=_detect_gaps(search_result),
+    #     graph=GraphResponse(**graph) if graph else None
+    # )
 
 
 def _simple_synthesize(query: str, results: list) -> str:

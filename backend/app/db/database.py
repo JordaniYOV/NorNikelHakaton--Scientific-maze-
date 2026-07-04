@@ -43,7 +43,7 @@ neo4j_conn = Neo4jConnection()
 
 
 # Qdrant
-qdrant_client = QdrantClient(host=settings.QDRANT_HOST, port=settings.QDRANT_PORT)
+qdrant_client = QdrantClient(url="http://localhost:6333")
 
 
 # Redis
@@ -60,6 +60,6 @@ def init_qdrant_collection():
     if settings.QDRANT_COLLECTION not in collection_names:
         qdrant_client.create_collection(
             collection_name=settings.QDRANT_COLLECTION,
-            vectors_config=VectorParams(size=1024, distance=Distance.COSINE),
+            vectors_config=VectorParams(size=settings.QDRANT_VECTOR_SIZE, distance=Distance.COSINE),
         )
         print(f"Collection '{settings.QDRANT_COLLECTION}' created")

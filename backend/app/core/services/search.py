@@ -68,7 +68,6 @@ class SearchService:
     
     def _extract_query_entities(self, query: str) -> list[dict[str, str]]:
         """Простое извлечение сущностей из запроса (для MVP)"""
-        # TODO: заменить на LLM-based извлечение
         from ...utils.synonymus import SYNONYMS
         
         found = []

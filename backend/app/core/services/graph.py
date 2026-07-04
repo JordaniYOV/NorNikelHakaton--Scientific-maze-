@@ -154,11 +154,15 @@ class GraphService:
     
     def get_neighbors(self, entity_name: str, depth: int = 2) -> dict[str, Any]:
         """Получить соседей сущности на заданную глубину"""
-        result = neo4j_conn.query("""
-            MATCH path = (start:Entity {canonical_name: $name})-[:RELATION*1..$depth]-(neighbor)
+        # ВАЛИДАЦИЯ: защита от Cypher-инъекций и некорректных значений
+        depth = max(1, min(int(depth), 5))
+        
+        # f-string для глубины — Cypher не поддерживает параметры в *1..$depth
+        result = neo4j_conn.query(f"""
+            MATCH path = (start:Entity {{canonical_name: $name}})-[:RELATION*1..{depth}]-(neighbor)
             RETURN start, neighbor, relationships(path) as rels, length(path) as depth
             LIMIT 100
-        """, {"name": entity_name, "depth": depth})
+        """, {"name": entity_name})
         
         nodes = {}
         edges = []
@@ -198,14 +202,18 @@ class GraphService:
     
     def get_subgraph_for_entities(self, entity_names: list[str], depth: int = 2) -> dict[str, Any]:
         """Получить подграф для списка сущностей"""
-        result = neo4j_conn.query("""
+        # ВАЛИДАЦИЯ: защита от Cypher-инъекций и некорректных значений
+        depth = max(1, min(int(depth), 5))
+        
+        # f-string для глубины — Cypher не поддерживает параметры в *1..$depth
+        result = neo4j_conn.query(f"""
             MATCH (e:Entity)
             WHERE e.canonical_name IN $names
             WITH e
-            MATCH path = (e)-[:RELATION*1..$depth]-(neighbor)
+            MATCH path = (e)-[:RELATION*1..{depth}]-(neighbor)
             RETURN e as start, neighbor, relationships(path) as rels
             LIMIT 200
-        """, {"names": entity_names, "depth": depth})
+        """, {"names": entity_names})
         
         nodes = {}
         edges = []
@@ -231,7 +239,6 @@ class GraphService:
             "nodes": list(nodes.values()),
             "edges": edges
         }
-    
     def delete_document(self, doc_id: str):
         """Удалить документ и связанные сущности (если нет других источников)"""
         neo4j_conn.query("""

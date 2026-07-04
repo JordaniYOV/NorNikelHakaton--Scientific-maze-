@@ -21,6 +21,7 @@ class YandexLLMClient:
             self.client = OpenAI(
                 api_key=self.api_key,
                 base_url=self.base_url, 
+                project=self.folder_id,
                 timeout=60.0,
                 max_retries=2,
             )
@@ -57,10 +58,7 @@ class YandexLLMClient:
                 model=f"gpt://{self.folder_id}/{self.model}",
                 messages=messages,
                 temperature=temperature,
-                max_tokens=max_tokens, 
-                extra_body={
-                    "folder_id": self.folder_id
-                }
+                max_tokens=max_tokens
             )
             
             return response.choices[0].message.content
@@ -146,10 +144,7 @@ class YandexLLMClient:
         try:
             response = self.client.embeddings.create(
                 model="text-embedding",  
-                input=texts, 
-                extra_body={
-                    "folder_id": self.folder_id
-                }
+                input=texts,
             )
             return [item.embedding for item in response.data]
         except Exception as e:

@@ -14,15 +14,16 @@ class Settings(BaseSettings):
     QDRANT_HOST: str = "localhost"
     QDRANT_PORT: int = 6333
     QDRANT_COLLECTION: str = "chunks"
+    QDRANT_VECTOR_SIZE: int = 768
     
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"
     
     # OpenAI
-    YANDEX_API_KEY: str = ""
-    YANDEX_FOLDER_ID: str = ""
-    YANDEX_BASE_URL: str = ""
-    YANDEX_MODEL: str = ""
+    YANDEX_API_KEY: str = "AQVNw1jAUmBRQz2_HKguH78oeLe2BH-6gNFhWsBs"
+    YANDEX_FOLDER_ID: str = "b1ggusvist6c2sia1dno"
+    YANDEX_BASE_URL: str = "https://ai.api.cloud.yandex.net/v1"
+    YANDEX_MODEL: str = "aliceai-llm"
     
     #Local models (Ollama)
     OLLAMA_EMBED_URL: str = "http://localhost:11435"

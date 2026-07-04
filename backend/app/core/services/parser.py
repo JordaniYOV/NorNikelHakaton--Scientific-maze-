@@ -2,7 +2,6 @@ import os
 import uuid
 from pathlib import Path,PurePosixPath
 import pdfplumber
-from ...core.config import settings
 
 
 HOST_UPLOAD_DIR = Path(r"C:\Users\Timur\myprojects\dev_env\NorNikelHakaton\uploads\raw")

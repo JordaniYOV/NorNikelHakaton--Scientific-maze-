@@ -6,8 +6,8 @@ from typing import Any
 from dataclasses import dataclass, field
 from enum import Enum
 
-# from backend.app.agents.yandex_llm import yandex_llm
-from backend.app.agents.local_llm import local_llm
+from backend.app.agents.yandex_llm import yandex_llm
+# from backend.app.agents.local_llm import local_llm
 
 
 
@@ -50,7 +50,7 @@ class ReasoningTrace:
 
 class RLM:
     def __init__(self):
-        self.llm = local_llm
+        self.llm = yandex_llm
         self.system_prompt = "Ты — компонент рекурсивной системы мышления для анализа горно-металлургических данных. Отвечай ТОЛЬКО валидным JSON без пояснений."
         self.trace = ReasoningTrace()
         self.max_depth = 3

@@ -15,7 +15,7 @@ class IndexingService:
     def __init__(self):
         self.collection_name = settings.QDRANT_COLLECTION
         self.model = local_llm
-        self.vector_size = 1024
+        self.vector_size = settings.QDRANT_VECTOR_SIZE
         self._ensure_collection()
     
     def _ensure_collection(self):
@@ -27,7 +27,7 @@ class IndexingService:
             if self.collection_name not in collection_names:
                 qdrant_client.create_collection(
                     collection_name=self.collection_name,
-                    vectors_config=VectorParams(size=1024, distance=Distance.COSINE),
+                    vectors_config=VectorParams(size=self.vector_size, distance=Distance.COSINE),
                 )
                 print(f"Коллекция {self.collection_name} создана")
         except Exception as e:

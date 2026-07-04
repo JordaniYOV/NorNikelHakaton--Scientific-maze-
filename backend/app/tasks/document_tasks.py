@@ -2,6 +2,7 @@
 import asyncio
 from uuid import UUID
 from celery import shared_task
+from sqlalchemy import select
 
 from ..db.database import SessionLocal
 from ..core.models import Document, DocumentStatus, Chunk, Relation, Entity
@@ -21,7 +22,9 @@ def process_document(self, doc_id: str):
     """
     db = SessionLocal()
     try:
-        doc = db.query(Document).filter(Document.id == UUID(doc_id)).first()
+        state = select(Document).filter(Document.id == UUID(doc_id))
+        doc_obj = db.execute(state)
+        doc = doc_obj.scalar_one_or_none()
         if not doc:
             raise ValueError(f"Документ {doc_id} не найден")
         
@@ -29,7 +32,6 @@ def process_document(self, doc_id: str):
         document_service.update_status(db, UUID(doc_id), DocumentStatus.PARSING)
         parsed_text = ParserService.parse_file(doc.storage_path)
         doc.parsed_text = parsed_text
-        db.commit()
         
         # Шаг 2: Разбиение на чанки
         chunks_data = chunk_document(parsed_text)
@@ -55,8 +57,8 @@ def process_document(self, doc_id: str):
         all_entities = []
         
         for chunk in chunk_records:
-            # Запускаем async функцию в sync контексте
-            entities = asyncio.run(extraction_service.extract_entities(chunk.text))
+            
+            entities = extraction_service.extract_entities(chunk.text)
             
             # Сохраняем в БД
             for ent in entities:
@@ -88,7 +90,7 @@ def process_document(self, doc_id: str):
             chunk_entities = [e for e in all_entities if str(chunk.id) in [str(ce.chunk_id) for ce in db.query(Entity).filter(Entity.chunk_id == chunk.id).all()]]
             
             if len(chunk_entities) >= 2:
-                relations = asyncio.run(extraction_service.extract_relations(chunk.text, chunk_entities))
+                relations = extraction_service.extract_relations(chunk.text, chunk_entities)
                 
                 for rel in relations:
                     

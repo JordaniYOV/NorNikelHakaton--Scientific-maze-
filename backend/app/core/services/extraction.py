@@ -14,11 +14,11 @@ class ExtractionService:
         self.llm = yandex_llm
         self.system_prompt = "Ты — экспертная система для извлечения структурированных данных из горно-металлургических текстов. Отвечай ТОЛЬКО валидным JSON без пояснений."
     
-    async def extract_entities(self, text: str) -> list[dict[str, Any]]:
+    def extract_entities(self, text: str) -> list[dict[str, Any]]:
         prompt = ENTITY_EXTRACTION_PROMPT.format(text=text[:4000])
         
         try:
-            response = await self.llm.chat_completion_json(
+            response = self.llm.chat_completion_json(
                 system_prompt=self.system_prompt, 
                 user_prompt=prompt,
                 temperature=0.1,
@@ -39,7 +39,7 @@ class ExtractionService:
             print(f"Ошибка парсинга entities: {e}, response: {response[:200]}")
             return self._fallback_extract_entities(text)
     
-    async def extract_relations(self, text: str, entities: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    def extract_relations(self, text: str, entities: list[dict[str, Any]]) -> list[dict[str, Any]]:
         entities_list = "\n".join([
             f"- {e['name']} ({e['type']}, каноническое: {e['canonical_name']})"
             for e in entities[:20]
@@ -48,7 +48,7 @@ class ExtractionService:
         prompt = RELATION_EXTRACTION_PROMPT.format(text=text[:3000], entities_list=entities_list)
         
         try:
-            response = await self.llm.chat_completion_json(
+            response = self.llm.chat_completion_json(
                 system_prompt=self.system_prompt,
                 user_prompt=prompt, 
                 temperature=0.1,
@@ -61,14 +61,14 @@ class ExtractionService:
             print(f"Ошибка парсинга relations: {e}")
             return self._fallback_extract_relations(text, entities)
     
-    async def extract_batch(self, texts: list[str]) -> list[list[dict[str, Any]]]:
+    def extract_batch(self, texts: list[str]) -> list[list[dict[str, Any]]]:
         results = []
         for text in texts:
-            entities = await self.extract_entities(text)
+            entities = self.extract_entities(text)
             results.append(entities)
         return results
     
-    async def _fallback_extract_entities(self, text: str) -> list[dict[str, Any]]:
+    def _fallback_extract_entities(self, text: str) -> list[dict[str, Any]]:
         import re
         entities = []
         

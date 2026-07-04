@@ -10,10 +10,10 @@ router = APIRouter(prefix="/search", tags=["search"])
 
 
 @router.post("/", response_model=SearchResponse)
-async def search(request: SearchRequest):
+def search(request: SearchRequest):
     """Гибридный поиск по корпусу"""
     try:
-        result = await search_service.search(
+        result = search_service.search(
             query=request.query,
             top_k=request.top_k,
             filters=request.filters
@@ -24,13 +24,13 @@ async def search(request: SearchRequest):
 
 
 @router.post("/answer", response_model=AnswerResponse)
-async def answer(request: AnswerRequest):
+def answer(request: AnswerRequest):
     """
     Полный ответ на вопрос с источниками и графом.
     MVP-реализация: поиск + простая агрегация.
     """
     # Поиск фактов
-    search_result = await search_service.search(request.query, top_k=10)
+    search_result = search_service.search(request.query, top_k=10)
     
     # Формируем контекст для ответа
     facts = []

@@ -1,9 +1,12 @@
 import os
 import uuid
-from pathlib import Path
+from pathlib import Path,PurePosixPath
 import pdfplumber
 from ...core.config import settings
 
+
+HOST_UPLOAD_DIR = Path(r"C:\Users\Timur\myprojects\dev_env\NorNikelHakaton\uploads\raw")
+DOCKER_UPLOAD_DIR = PurePosixPath("/app/uploads/raw")
 
 class ParserService:
     """Парсинг различных форматов документов"""
@@ -84,16 +87,25 @@ class ParserService:
     
     @classmethod
     def save_upload(cls, file_content: bytes, original_filename: str) -> str:
-        """Сохранить загруженный файл и вернуть путь"""
-        os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
-        
-        # Генерируем уникальное имя
+        """Сохраняет файл и возвращает путь в Unix-формате для Docker"""
+        HOST_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+        ext = Path(original_filename).suffix.lower()
         file_id = str(uuid.uuid4())
-        ext = Path(original_filename).suffix
-        safe_filename = f"{file_id}{ext}"
-        file_path = os.path.join(settings.UPLOAD_DIR, safe_filename)
         
-        with open(file_path, 'wb') as f:
-            f.write(file_content)
+        file_path = HOST_UPLOAD_DIR / f"{file_id}{ext}"
+        file_path.write_bytes(file_content)
+        db_path = DOCKER_UPLOAD_DIR / f"{file_id}{ext}"
+        return str(db_path)  # /app/uploads/raw/xxx.pdf
+        # """Сохранить загруженный файл и вернуть путь"""
+        # os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
         
-        return file_path
+        # # Генерируем уникальное имя
+        # file_id = str(uuid.uuid4())
+        # ext = Path(original_filename).suffix
+        # safe_filename = f"{file_id}{ext}"
+        # file_path = os.path.join(settings.UPLOAD_DIR, safe_filename)
+        
+        # with open(file_path, 'wb') as f:
+        #     f.write(file_content)
+        
+        # return file_path

@@ -14,7 +14,7 @@ router = APIRouter(prefix="/documents", tags=["documents"])
 
 
 @router.post("/upload", response_model=DocumentUploadResponse)
-async def upload_document(
+def upload_document(
     file: UploadFile = File(...),
     db: Session = Depends(get_db)
 ):
@@ -26,7 +26,7 @@ async def upload_document(
         raise HTTPException(400, f"Неподдерживаемый формат: {ext}")
     
     # Сохраняем файл
-    content = await file.read()
+    content = file.read()
     file_path = ParserService.save_upload(content, file.filename)
     
     # Создаём запись в БД

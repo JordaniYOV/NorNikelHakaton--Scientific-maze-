@@ -36,7 +36,7 @@ services:
       dockerfile: Dockerfile.celery
     container_name: kg_worker
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/kg_mvp
+      - DATABASE_URL=postgresql+psycopg://postgres:1234@postgres:5432/kg_mvp
       - NEO4J_URI=bolt://neo4j:7687
       - NEO4J_USER=neo4j
       - NEO4J_PASSWORD=password
@@ -46,7 +46,7 @@ services:
       - UPLOAD_DIR=/app/uploads/raw
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
     volumes:
-    - ./backend:/app/backend  # Монтируем для разработки
+    # - ./backend:/app/backend  # Монтируем для разработки
     - ./uploads:/app/uploads
     depends_on:
       - postgres
@@ -61,10 +61,10 @@ services:
     container_name: kg_postgres
     environment:
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_PASSWORD=1234
       - POSTGRES_DB=kg_mvp
     ports:
-      - "5432:5432"
+      - "5430:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 

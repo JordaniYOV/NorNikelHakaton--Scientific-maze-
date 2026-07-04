@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     # Database
-    DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/kg_mvp"
+    DATABASE_URL: str = "postgresql+psycopg://postgres:1234@localhost:5430/kg_mvp"
     
     # Neo4j
     NEO4J_URI: str = "bolt://localhost:7687"
@@ -19,10 +19,10 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379/0"
     
     # OpenAI
-    YANDEX_API_KEY: str = ""
-    YANDEX_FOLDER_ID: str = ""
-    YANDEX_BASE_URL: str = ""
-    YANDEX_MODEL: str = ""
+    YANDEX_API_KEY: str = "AQVNw1jAUmBRQz2_HKguH78oeLe2BH-6gNFhWsBs"
+    YANDEX_FOLDER_ID: str = "b1ggusvist6c2sia1dno"
+    YANDEX_BASE_URL: str = "https://ai.api.cloud.yandex.net/v1"
+    YANDEX_MODEL: str = "yandexgpt-lite"
     
     # Uploads
     UPLOAD_DIR: str = "./uploads/raw"

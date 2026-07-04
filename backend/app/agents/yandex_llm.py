@@ -1,7 +1,7 @@
 """Клинет для Yandex rest api"""
 import json
 from typing import Any
-from openai import AsyncOpenAI
+from openai import OpenAI
 from ..core.config import settings
 
 
@@ -18,7 +18,7 @@ class YandexLLMClient:
         self.model = settings.YANDEX_MODEL
         
         if self.api_key and self.folder_id:
-            self.client = AsyncOpenAI(
+            self.client = OpenAI(
                 api_key=self.api_key,
                 base_url=self.base_url, 
                 timeout=60.0,
@@ -29,7 +29,7 @@ class YandexLLMClient:
             print("Yandex API ключ не настроен — будет использоваться fallback")
             self.client = None
     
-    async def chat_completion(
+    def chat_completion(
         self,
         system_prompt: str,
         user_prompt: str,
@@ -38,7 +38,7 @@ class YandexLLMClient:
         json_mode: bool = False,
     ) -> str:
         """
-        Асинхронный вызов chat completion.
+        вызов chat completion.
         Возвращает текст ответа.
         """
         if not self.client:
@@ -53,8 +53,8 @@ class YandexLLMClient:
             messages[1]["content"] += "\n\nОтвет дожен быть только в формате JSON"
         
         try:
-            response = await self.client.chat.completions.create(
-                model=self.model,
+            response = self.client.chat.completions.create(
+                model=f"gpt://{self.folder_id}/{self.model}",
                 messages=messages,
                 temperature=temperature,
                 max_tokens=max_tokens, 
@@ -72,7 +72,7 @@ class YandexLLMClient:
                 print(f"   Тело: {e.response.text}")
             raise
     
-    async def chat_completion_json(
+    def chat_completion_json(
         self,
         system_prompt: str,
         user_prompt: str,
@@ -84,7 +84,7 @@ class YandexLLMClient:
         Если парсинг не удался — возвращает {"error": "parse_failed", "raw": "..."}
         """
         try:
-            response_text = await self.chat_completion(
+            response_text = self.chat_completion(
                 system_prompt=system_prompt,
                 user_prompt=user_prompt,
                 temperature=temperature,
@@ -93,12 +93,12 @@ class YandexLLMClient:
             )
             
             # Извлекаем JSON из ответа
-            return await self._extract_json(response_text)
+            return self._extract_json(response_text)
             
         except Exception as e:
             return {"error": str(e), "raw": ""}
     
-    async def _extract_json(self, text: str) -> dict[str, Any]:
+    def _extract_json(self, text: str) -> dict[str, Any]:
         """Извлекает JSON из ответа LLM"""
         text = text.strip()
         
@@ -137,14 +137,14 @@ class YandexLLMClient:
         # Не удалось распарсить — возвращаем как есть
         return {"error": "parse_failed", "raw": text[:1000]}
     
-    async def embeddings(self, texts: list) -> list:
+    def embeddings(self, texts: list) -> list:
         """
         Получить эмбеддинги через Yandex.
         """
         if not self.client:
             return []
         try:
-            response = await self.client.embeddings.create(
+            response = self.client.embeddings.create(
                 model="text-embedding",  
                 input=texts, 
                 extra_body={
@@ -156,7 +156,7 @@ class YandexLLMClient:
             print(f"Ошибка получения эмбеддингов: {e}")
             raise
     
-    async def embeddings_batch(self, texts: list[str], batch_size: int = 10) -> list[list[float]]:
+    def embeddings_batch(self, texts: list[str], batch_size: int = 10) -> list[list[float]]:
         """
         Получение эмбеддингов батчами (если API имеет ограничение).
         """
@@ -164,7 +164,7 @@ class YandexLLMClient:
         
         for i in range(0, len(texts), batch_size):
             batch = texts[i:i + batch_size]
-            batch_embeddings = await self.embeddings(batch)
+            batch_embeddings = self.embeddings(batch)
             all_embeddings.extend(batch_embeddings)
         
         return all_embeddings

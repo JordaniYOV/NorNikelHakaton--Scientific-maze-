@@ -2,6 +2,7 @@
 import os
 
 from uuid import UUID
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 from ...core.models import Document, DocumentStatus, ProcessingTask, TaskStatus
 from ...core.schemas import DocumentStatusResponse, DocumentListResponse
@@ -59,7 +60,10 @@ class DocumentService:
     def update_status(db: Session, doc_id: UUID, status: DocumentStatus,
                       error_message: str | None = None):
         """Обновить статус документа"""
-        doc = db.query(Document).filter(Document.id == doc_id).first()
+        state = select(Document).filter(Document.id == doc_id)
+        doc_obj = db.execute(state)
+        doc = doc_obj.scalar_one_or_none()
+
         if doc:
             doc.status = status
             if error_message:
@@ -80,11 +84,11 @@ class DocumentService:
             os.remove(doc.storage_path)
         
         # 2. Удалить из Qdrant
-        from app.core.services.indexing import indexing_service
+        from .indexing import indexing_service
         indexing_service.delete_by_doc_id(str(doc_id))
         
         # 3. Удалить из Neo4j
-        from app.core.services.graph import graph_service
+        from .graph import graph_service
         graph_service.delete_document(str(doc_id))
         
         # 4. Удалить из PostgreSQL (каскадно удалит chunks, entities, relations, tasks)

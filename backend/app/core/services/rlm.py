@@ -55,30 +55,30 @@ class RLM:
         self.max_depth = 3
         self.max_substacks = 10
     
-    async def solve(self, query: str, context: dict[str, Any] = None) -> dict[str, Any]:
+    def solve(self, query: str, context: dict[str, Any] = None) -> dict[str, Any]:
         self.trace = ReasoningTrace()
         context = context or {}
         
-        analysis = await self._analyze_complexity(query, context)
+        analysis = self._analyze_complexity(query, context)
         self.trace.add({"action": "analyze_complexity", "result": analysis})
         
         if not analysis.get("needs_decomposition", False):
-            return await self._direct_answer(query, context)
+            return self._direct_answer(query, context)
         
-        subtasks = await self._decompose(query, analysis, context)
+        subtasks = self._decompose(query, analysis, context)
         self.trace.add({"action": "decompose", "result": f"Создано {len(subtasks)} подзадач"})
         
-        results = await self._execute_subtasks(subtasks, context)
+        results = self._execute_subtasks(subtasks, context)
         
-        sufficiency = await self._check_sufficiency(query, results, context)
+        sufficiency = self._check_sufficiency(query, results, context)
         self.trace.add({"action": "check_sufficiency", "result": sufficiency})
         
         if not sufficiency.get("sufficient", False) and sufficiency.get("can_refine", False):
-            refined_tasks = await self._refine_tasks(subtasks, results, sufficiency)
-            refined_results = await self._execute_subtasks(refined_tasks, context)
+            refined_tasks = self._refine_tasks(subtasks, results, sufficiency)
+            refined_results = self._execute_subtasks(refined_tasks, context)
             results.extend(refined_results)
         
-        final_answer = await self._synthesize(query, results, context)
+        final_answer = self._synthesize(query, results, context)
         
         return {
             "answer": final_answer["text"],
@@ -89,7 +89,7 @@ class RLM:
             "subtasks_executed": len([r for r in results if r is not None])
         }
     
-    async def _analyze_complexity(self, query: str, context: dict) -> dict[str, Any]:
+    def _analyze_complexity(self, query: str, context: dict) -> dict[str, Any]:
         prompt = f'''Ты — оркестратор интеллектуальной системы. Проанализируй запрос и реши, требуется ли его разбиение на подзадачи.
 
 Запрос: {query}
@@ -111,7 +111,7 @@ class RLM:
 - needs_decomposition = false, если это простой фактический поиск
 '''
         try:
-            response = await self.llm.chat_completion_json(
+            response = self.llm.chat_completion_json(
                 system_prompt=self.system_prompt, 
                 user_prompt=prompt,
                 temperature=0.1
@@ -129,7 +129,7 @@ class RLM:
                 "key_aspects": []
             }
     
-    async def _decompose(self, query: str, analysis: dict, context: dict) -> list[SubTask]:
+    def _decompose(self, query: str, analysis: dict, context: dict) -> list[SubTask]:
         prompt = f'''Ты — планировщик задач. Разбей запрос на конкретные подзадачи для исполнителей.
 
 Запрос: "{query}"
@@ -162,7 +162,7 @@ class RLM:
 Максимум {self.max_substacks} подзадач.
 '''
         try:
-            response = await self.llm.chat_completion_json(
+            response = self.llm.chat_completion_json(
                 system_prompt=self.system_prompt, 
                 user_prompt=prompt,
                 temperature=0.2
@@ -186,12 +186,12 @@ class RLM:
                 depth=0
             )]
     
-    async def _execute_subtasks(self, subtasks: list[SubTask], context: dict) -> list[dict]:
+    def _execute_subtasks(self, subtasks: list[SubTask], context: dict) -> list[dict]:
         tasks = []
         for st in subtasks:
             tasks.append(self._execute_single_task(st, context))
         
-        results = await asyncio.gather(*tasks, return_exceptions=True)
+        results = asyncio.gather(*tasks, return_exceptions=True)
         
         processed = []
         for st, result in zip(subtasks, results):
@@ -215,27 +215,27 @@ class RLM:
         
         return processed
     
-    async def _execute_single_task(self, task: SubTask, context: dict) -> Any:
+    def _execute_single_task(self, task: SubTask, context: dict) -> Any:
         if task.type == TaskType.SEARCH:
-            return await self._sub_search(task, context)
+            return self._sub_search(task, context)
         elif task.type == TaskType.EXTRACT:
-            return await self._sub_extract(task, context)
+            return self._sub_extract(task, context)
         elif task.type == TaskType.COMPARE:
-            return await self._sub_compare(task, context)
+            return self._sub_compare(task, context)
         elif task.type == TaskType.VERIFY:
-            return await self._sub_verify(task, context)
+            return self._sub_verify(task, context)
         elif task.type == TaskType.GAP_FIND:
-            return await self._sub_gap_find(task, context)
+            return self._sub_gap_find(task, context)
         elif task.type == TaskType.REFINE:
-            return await self._sub_refine(task, context)
+            return self._sub_refine(task, context)
         else:
-            return await self._sub_search(task, context)
+            return self._sub_search(task, context)
     
-    async def _sub_search(self, task: SubTask, context: dict) -> dict[str, Any]:
-        from app.core.services.search import search_service
+    def _sub_search(self, task: SubTask, context: dict) -> dict[str, Any]:
+        from .search import search_service
         
         query = task.context.get("query", task.description)
-        search_result = await search_service.search(query, top_k=10)
+        search_result = search_service.search(query, top_k=10)
         
         prompt = f'''Ты — поисковый аналитик. Оцени результаты поиска.
 
@@ -257,7 +257,7 @@ class RLM:
         
         
         try:
-            analysis = await yandex_llm.chat_completion_json(
+            analysis = yandex_llm.chat_completion_json(
                 system_prompt=self.system_prompt,
                 user_prompt=prompt,
                 temperature=0.1
@@ -275,7 +275,7 @@ class RLM:
                 depth=task.depth + 1
             )
             if refined_task.depth < self.max_depth:
-                refined_result = await self._sub_search(refined_task, context)
+                refined_result = self._sub_search(refined_task, context)
                 search_result["results"].extend(refined_result.get("results", []))
         
         return {
@@ -286,7 +286,7 @@ class RLM:
             "task_id": task.id
         }
     
-    async def _sub_extract(self, task: SubTask, context: dict) -> dict[str, Any]:
+    def _sub_extract(self, task: SubTask, context: dict) -> dict[str, Any]:
         source_data = task.context.get("source_data", [])
         what_to_extract = task.context.get("extract", "все числовые параметры")
         
@@ -306,7 +306,7 @@ class RLM:
 }}
 '''
         try:
-            return await yandex_llm.chat_completion_json(
+            return andex_llm.chat_completion_json(
                 system_prompt=self.system_prompt,
                 user_prompt=prompt,
                 temperature=0.1
@@ -314,7 +314,7 @@ class RLM:
         except:
             return {"extracted": [], "confidence": 0}
     
-    async def _sub_compare(self, task: SubTask, context: dict) -> dict[str, Any]:
+    def _sub_compare(self, task: SubTask, context: dict) -> dict[str, Any]:
         variants = task.context.get("variants", [])
         criteria = task.context.get("criteria", [])
         
@@ -333,7 +333,7 @@ class RLM:
 }}
 '''
         try:
-            return await yandex_llm.chat_completion_json(
+            return yandex_llm.chat_completion_json(
                 system_prompt=self.system_prompt,
                 user_prompt=prompt,
                 temperature=0.2
@@ -341,7 +341,7 @@ class RLM:
         except:
             return {"comparison_table": [], "winner": "unknown", "reasoning": "error"}
         
-    async def _sub_verify(self, task: SubTask, context: dict) -> dict[str, Any]:
+    def _sub_verify(self, task: SubTask, context: dict) -> dict[str, Any]:
         facts = task.context.get("facts", [])
         
         prompt = f'''Ты — верификатор. Проверь факты на противоречия.
@@ -359,7 +359,7 @@ class RLM:
 '''
         
         try:
-            return await yandex_llm.chat_completion_json(
+            return yandex_llm.chat_completion_json(
                 system_prompt=self.system_prompt,
                 user_prompt=prompt,
                 temperature=0.1
@@ -367,7 +367,7 @@ class RLM:
         except:
             return {"verified": False, "contradictions": [], "uncertain": [], "recommendation": ""}
     
-    async def _sub_gap_find(self, task: SubTask, context: dict) -> dict[str, Any]:
+    def _sub_gap_find(self, task: SubTask, context: dict) -> dict[str, Any]:
         found_data = task.context.get("found_data", [])
         required_aspects = task.context.get("required", [])
         
@@ -388,7 +388,7 @@ class RLM:
 }}
 '''
         try:
-            return await yandex_llm.chat_completion_json(
+            return yandex_llm.chat_completion_json(
                 system_prompt=self.system_prompt,
                 user_prompt=prompt,
                 temperature=0.2
@@ -396,7 +396,7 @@ class RLM:
         except:
             return {"gaps": [], "coverage_percent": 0}
     
-    async def _sub_refine(self, task: SubTask, context: dict) -> dict[str, Any]:
+    def _sub_refine(self, task: SubTask, context: dict) -> dict[str, Any]:
         original_query = task.context.get("original_query", "")
         previous_results = task.context.get("previous_results", [])
         why_refine = task.context.get("reason", "")
@@ -414,7 +414,7 @@ class RLM:
 }}
 '''
         try:
-            return await yandex_llm.chat_completion_json(
+            return yandex_llm.chat_completion_json(
                 system_prompt=self.system_prompt,
                 user_prompt=prompt,
                 temperature=0.3
@@ -422,7 +422,7 @@ class RLM:
         except:
             return {"refined_queries": [original_query], "strategy": "no change"}
     
-    async def _check_sufficiency(self, query: str, results: list[dict], context: dict) -> dict[str, Any]:
+    def _check_sufficiency(self, query: str, results: list[dict], context: dict) -> dict[str, Any]:
         all_findings = []
         for r in results:
             if r.get("status") == "completed":
@@ -447,7 +447,7 @@ class RLM:
 }}
 '''
         try:
-            return await yandex_llm.chat_completion_json(
+            return yandex_llm.chat_completion_json(
                 system_prompt=self.system_prompt,
                 user_prompt=prompt,
                 temperature=0.1
@@ -461,7 +461,7 @@ class RLM:
                 "reasoning": "fallback"
             }
     
-    async def _refine_tasks(self, subtasks: list[SubTask], results: list[dict], 
+    def _refine_tasks(self, subtasks: list[SubTask], results: list[dict], 
                            sufficiency: dict) -> list[SubTask]:
         gaps = sufficiency.get("gaps", [])
         
@@ -481,7 +481,7 @@ class RLM:
         
         return refined
     
-    async def _synthesize(self, query: str, results: list[dict], context: dict) -> dict[str, Any]:
+    def _synthesize(self, query: str, results: list[dict], context: dict) -> dict[str, Any]:
         all_data = []
         sources = []
         
@@ -549,7 +549,7 @@ class RLM:
 }}
 '''
         try:
-            data = await yandex_llm.chat_completion_json(
+            data = yandex_llm.chat_completion_json(
                 system_prompt=self.system_prompt,
                 user_prompt=prompt,
                 temperature=0.2
@@ -563,7 +563,7 @@ class RLM:
                 "sources": unique_sources[:10],
                 "structure": data.get("structure", {})
             }
-        except:
+        except Exception as e:
             texts = [d.get("text", "") for d in all_data if isinstance(d, dict) and "text" in d]
             return {
                 "text": "\n\n".join(texts[:5]) if texts else "Данные найдены, но синтез не удался",
@@ -571,10 +571,10 @@ class RLM:
                 "sources": unique_sources[:5],
                 "structure": {}
             }
-    async def _direct_answer(self, query: str, context: dict) -> dict[str, Any]:
-        from app.core.services.search import search_service
+    def _direct_answer(self, query: str, context: dict) -> dict[str, Any]:
+        from .search import search_service
         
-        search_result = await search_service.search(query, top_k=5)
+        search_result = search_service.search(query, top_k=5)
         texts = [r["text"][:400] for r in search_result.get("results", [])]
         
         prompt = f'''Ответь на вопрос кратко, используя только предоставленные данные.
@@ -591,7 +591,7 @@ class RLM:
 }}
 '''
         try:
-            data = await yandex_llm.chat_completion_json(
+            data = yandex_llm.chat_completion_json(
                 system_prompt=self.system_prompt,
                 user_prompt=prompt,
                 temperature=0.1
@@ -605,7 +605,7 @@ class RLM:
                 "gaps": [],
                 "subtasks_executed": 1
             }
-        except:
+        except Exception as e:
             return {
                 "answer": "\n".join(texts[:3]) if texts else "Информация не найдена",
                 "sources": [],
@@ -615,11 +615,11 @@ class RLM:
                 "subtasks_executed": 1
             }
     
-    async def _fallback_solve(self, query: str, context: dict) -> dict[str, Any]:
+    def _fallback_solve(self, query: str, context: dict) -> dict[str, Any]:
         """Fallback когда Yandex API недоступен"""
-        from app.core.services.search import search_service
+        from .search import search_service
         
-        search_result = await search_service.search(query, top_k=5)
+        search_result = search_service.search(query, top_k=5)
         texts = [r["text"][:500] for r in search_result.get("results", [])]
         
         return {

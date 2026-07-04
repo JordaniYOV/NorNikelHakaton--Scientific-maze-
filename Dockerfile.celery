@@ -2,17 +2,6 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-COPY requirements/celery.txt /app/requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
-
-COPY backend/ backend/
-
-ENV PYTHONPATH=/app
-
-RUN mkdir -p /app/logsFROM python:3.11-slim
-
-WORKDIR /app
-
 # Копируем зависимости
 COPY requirements/celery.txt requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt

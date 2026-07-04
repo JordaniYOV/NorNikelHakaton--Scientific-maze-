@@ -10,7 +10,7 @@ redis==5.0.6
 aiofiles==24.1.0
 
 # Database
-psycopg2-binary==2.9.9
+psycopg3==3.1.19
 SQLAlchemy==2.0.31
 alembic==1.13.2
 asyncpg==0.29.0
@@ -26,7 +26,7 @@ qdrant-client==1.9.2
 # transformers==4.41.2
 # torch==2.3.1
 # numpy==1.26.4
-openai==1.10.0
+openai==2.44.0
 
 # Document Parsing
 PyPDF2==3.0.1

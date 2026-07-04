@@ -10,7 +10,6 @@ def split_by_headers(text: str) -> list[str]:
 
 
 def split_by_paragraphs(text: str, max_length: int = None) -> list[str]:
-    """Разбиение по параграфам с ограничением длины"""
     max_length = max_length or settings.CHUNK_SIZE
     paragraphs = [p.strip() for p in text.split('\n\n') if p.strip()]
     
@@ -20,16 +19,36 @@ def split_by_paragraphs(text: str, max_length: int = None) -> list[str]:
     
     for para in paragraphs:
         para_len = len(para)
+        
+        # Если один параграф больше max_length - принудительно разбиваем
+        if para_len > max_length:
+            # Сохраняем текущий чанк если есть
+            if current_chunk:
+                chunks.append('\n\n'.join(current_chunk))
+            
+            # Разбиваем длинный параграф на части (можно по предложениям)
+            # Здесь упрощенно - просто добавляем как есть
+            chunks.append(para)
+            current_chunk = []
+            current_length = 0
+            continue
+        
+        # Если не влезает - сохраняем чанк и начинаем новый с перекрытием
         if current_length + para_len > max_length and current_chunk:
             chunks.append('\n\n'.join(current_chunk))
-            # Перекрытие: сохраняем последние 2 параграфа
-            overlap = current_chunk[-2:] if len(current_chunk) >= 2 else current_chunk[-1:]
+            
+            # Перекрытие: берем последние 1-2 параграфа из ТЕКУЩЕГО чанка
+            overlap_size = 2
+            overlap = current_chunk[-overlap_size:] if len(current_chunk) >= overlap_size else current_chunk[:]
+            
+            # Новый чанк начинается с перекрытия + новый параграф
             current_chunk = overlap + [para]
             current_length = sum(len(p) for p in current_chunk)
         else:
             current_chunk.append(para)
             current_length += para_len
     
+    # Добавляем последний чанк
     if current_chunk:
         chunks.append('\n\n'.join(current_chunk))
     

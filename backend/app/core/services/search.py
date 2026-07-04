@@ -2,13 +2,13 @@
 from typing import Any
 from ...core.services.indexing import indexing_service
 from ...core.services.graph import graph_service
-from ...db.database import neo4j_conn
+
 
 
 class SearchService:
     """Гибридный поиск по корпусу документов"""
     
-    async def search(self, query: str, top_k: int = 10,
+    def search(self, query: str, top_k: int = 10,
                      filters: dict[str, Any] = None) -> dict[str, Any]:
         """
         Гибридный поиск:
@@ -69,7 +69,7 @@ class SearchService:
     def _extract_query_entities(self, query: str) -> list[dict[str, str]]:
         """Простое извлечение сущностей из запроса (для MVP)"""
         # TODO: заменить на LLM-based извлечение
-        from app.utils.synonymus import SYNONYMS
+        from ...utils.synonymus import SYNONYMS
         
         found = []
         query_lower = query.lower()

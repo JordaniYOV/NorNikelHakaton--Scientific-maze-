@@ -19,11 +19,17 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379/0"
     
     # OpenAI
-    YANDEX_API_KEY: str = "AQVNw1jAUmBRQz2_HKguH78oeLe2BH-6gNFhWsBs"
-    YANDEX_FOLDER_ID: str = "b1ggusvist6c2sia1dno"
-    YANDEX_BASE_URL: str = "https://ai.api.cloud.yandex.net/v1"
-    YANDEX_MODEL: str = "yandexgpt-lite"
+    YANDEX_API_KEY: str = ""
+    YANDEX_FOLDER_ID: str = ""
+    YANDEX_BASE_URL: str = ""
+    YANDEX_MODEL: str = ""
     
+    #Local models (Ollama)
+    OLLAMA_EMBED_URL: str = "http://localhost:11435"
+    OLLAMA_CHAT_URL: str = "http://localhost:11434"
+    OLLAMA_CHAT_MODEL: str ="qwen2.5:3b"
+    OLLAMA_EMBED_MODEL: str ="nomic-embed-text"
+
     # Uploads
     UPLOAD_DIR: str = "./uploads/raw"
     

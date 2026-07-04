@@ -6,45 +6,9 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 import enum
 
+from .schemas import DocumentStatus, EntityType, TaskType, TaskStatus   
+
 Base = declarative_base()
-
-class DocumentStatus(str, enum.Enum):
-    UPLOADED = "uploaded"
-    PARSING = "parsing"
-    ENTITIES_EXTRACTED = "entities_extracted"
-    RELATIONS_EXTRACTED = "relations_extracted"
-    INDEXING = "indexing"
-    READY = "ready"
-    ERROR = "error"
-
-
-class TaskType(str, enum.Enum):
-    PARSE = "parse"
-    EXTRACT_ENTITIES = "extract_entities"
-    EXTRACT_RELATIONS = "extract_relations"
-    INDEX_VECTORS = "index_vectors"
-    BUILD_GRAPH = "build_graph"
-
-
-class TaskStatus(str, enum.Enum):
-    PENDING = "pending"
-    RUNNING = "running"
-    COMPLETED = "completed"
-    FAILED = "failed"
-
-
-class EntityType(str, enum.Enum):
-    MATERIAL = "Material"
-    PROCESS = "Process"
-    EQUIPMENT = "Equipment"
-    PROPERTY = "Property"
-    PARAMETER = "Parameter"
-    CONDITION = "Condition"
-    EXPERT = "Expert"
-    ORGANIZATION = "Organization"
-    PUBLICATION = "Publication"
-    UNKNOWN = "Unknown"
-
 
 class Document(Base):
     __tablename__ = "documents"

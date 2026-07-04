@@ -6,7 +6,8 @@ from typing import Any
 from dataclasses import dataclass, field
 from enum import Enum
 
-from backend.app.agents import yandex_llm
+# from backend.app.agents.yandex_llm import yandex_llm
+from backend.app.agents.local_llm import local_llm
 
 
 
@@ -49,7 +50,7 @@ class ReasoningTrace:
 
 class RLM:
     def __init__(self):
-        self.llm = yandex_llm
+        self.llm = local_llm
         self.system_prompt = "Ты — компонент рекурсивной системы мышления для анализа горно-металлургических данных. Отвечай ТОЛЬКО валидным JSON без пояснений."
         self.trace = ReasoningTrace()
         self.max_depth = 3
@@ -187,11 +188,9 @@ class RLM:
             )]
     
     def _execute_subtasks(self, subtasks: list[SubTask], context: dict) -> list[dict]:
-        tasks = []
+        results = []
         for st in subtasks:
-            tasks.append(self._execute_single_task(st, context))
-        
-        results = asyncio.gather(*tasks, return_exceptions=True)
+            results.append(self._execute_single_task(st, context))
         
         processed = []
         for st, result in zip(subtasks, results):
@@ -257,7 +256,7 @@ class RLM:
         
         
         try:
-            analysis = yandex_llm.chat_completion_json(
+            analysis = self.llm.chat_completion_json(
                 system_prompt=self.system_prompt,
                 user_prompt=prompt,
                 temperature=0.1
@@ -306,7 +305,7 @@ class RLM:
 }}
 '''
         try:
-            return andex_llm.chat_completion_json(
+            return self.llm.chat_completion_json(
                 system_prompt=self.system_prompt,
                 user_prompt=prompt,
                 temperature=0.1
@@ -333,7 +332,7 @@ class RLM:
 }}
 '''
         try:
-            return yandex_llm.chat_completion_json(
+            return self.llm.chat_completion_json(
                 system_prompt=self.system_prompt,
                 user_prompt=prompt,
                 temperature=0.2
@@ -359,7 +358,7 @@ class RLM:
 '''
         
         try:
-            return yandex_llm.chat_completion_json(
+            return self.llm.chat_completion_json(
                 system_prompt=self.system_prompt,
                 user_prompt=prompt,
                 temperature=0.1
@@ -388,7 +387,7 @@ class RLM:
 }}
 '''
         try:
-            return yandex_llm.chat_completion_json(
+            return self.llm.chat_completion_json(
                 system_prompt=self.system_prompt,
                 user_prompt=prompt,
                 temperature=0.2
@@ -414,7 +413,7 @@ class RLM:
 }}
 '''
         try:
-            return yandex_llm.chat_completion_json(
+            return self.llm.chat_completion_json(
                 system_prompt=self.system_prompt,
                 user_prompt=prompt,
                 temperature=0.3
@@ -447,7 +446,7 @@ class RLM:
 }}
 '''
         try:
-            return yandex_llm.chat_completion_json(
+            return self.llm.chat_completion_json(
                 system_prompt=self.system_prompt,
                 user_prompt=prompt,
                 temperature=0.1
@@ -549,7 +548,7 @@ class RLM:
 }}
 '''
         try:
-            data = yandex_llm.chat_completion_json(
+            data = self.llm.chat_completion_json(
                 system_prompt=self.system_prompt,
                 user_prompt=prompt,
                 temperature=0.2
@@ -591,7 +590,7 @@ class RLM:
 }}
 '''
         try:
-            data = yandex_llm.chat_completion_json(
+            data = self.llm.chat_completion_json(
                 system_prompt=self.system_prompt,
                 user_prompt=prompt,
                 temperature=0.1

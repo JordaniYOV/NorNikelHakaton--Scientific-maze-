@@ -4,18 +4,19 @@ from typing import Any
 
 from ...utils.prompts import ENTITY_EXTRACTION_PROMPT, RELATION_EXTRACTION_PROMPT
 from ...utils.synonymus import normalize_entity
-from ...agents.yandex_llm import yandex_llm
+# from ...agents.yandex_llm import yandex_llm
+from ...agents.local_llm import local_llm
 
 
 class ExtractionService:
     """Извлечение сущностей и связей из текста"""
     
     def __init__(self):
-        self.llm = yandex_llm
+        self.llm = local_llm
         self.system_prompt = "Ты — экспертная система для извлечения структурированных данных из горно-металлургических текстов. Отвечай ТОЛЬКО валидным JSON без пояснений."
     
     def extract_entities(self, text: str) -> list[dict[str, Any]]:
-        prompt = ENTITY_EXTRACTION_PROMPT.format(text=text[:4000])
+        prompt = ENTITY_EXTRACTION_PROMPT.format(text=text)
         
         try:
             response = self.llm.chat_completion_json(

@@ -95,7 +95,9 @@ class ParserService:
         file_path = HOST_UPLOAD_DIR / f"{file_id}{ext}"
         file_path.write_bytes(file_content)
         db_path = DOCKER_UPLOAD_DIR / f"{file_id}{ext}"
-        return str(db_path)  # /app/uploads/raw/xxx.pdf
+        return str(db_path)  
+    
+    # /app/uploads/raw/xxx.pdf
         # """Сохранить загруженный файл и вернуть путь"""
         # os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
         

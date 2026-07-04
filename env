@@ -16,6 +16,12 @@ REDIS_URL=redis://localhost:6379/0
 # OpenAI (опционально, для извлечения сущностей)
 OPENAI_API_KEY=your-key-here
 
+# === OLLAMA (локальные модели) ===
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_CHAT_MODEL=qwen2.5:14b
+OLLAMA_EMBED_MODEL=nomic-embed-text
+EMBED_DIMENSION=768
+
 # Uploads
 UPLOAD_DIR=./uploads/raw
 

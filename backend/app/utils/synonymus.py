@@ -1,3 +1,6 @@
+from backend.app.core.schemas import EntityType
+
+
 SYNONYMS: dict[str, dict[str, list[str]]] = {
     "Material": {
         "никель": ["nickel", "ni", "Ni"],
@@ -46,7 +49,6 @@ def normalize_entity(name: str, entity_type: str | None = None) -> str:
     """Нормализация названия сущности по словарю синонимов"""
     name_lower = name.lower().strip()
     
-    # Если указан тип — ищем только в нём
     types_to_search = [entity_type] if entity_type else list(SYNONYMS.keys())
     
     for etype in types_to_search:
@@ -58,9 +60,8 @@ def normalize_entity(name: str, entity_type: str | None = None) -> str:
             for syn in synonyms_list:
                 if name_lower == syn.lower():
                     return canonical
-    
-    # Не нашли в словаре — возвращаем как есть, но нормализуем пробелы
-    return name.strip()
+                
+    return EntityType.UNKNOWN
 
 
 def get_synonyms(canonical_name: str, entity_type: str) -> list[str]:

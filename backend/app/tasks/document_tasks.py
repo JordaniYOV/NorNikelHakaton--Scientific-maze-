@@ -32,7 +32,7 @@ def process_document(self, doc_id: str):
         document_service.update_status(db, UUID(doc_id), DocumentStatus.PARSING)
         parsed_text = ParserService.parse_file(doc.storage_path)
         doc.parsed_text = parsed_text
-        
+        print(doc)
         # Шаг 2: Разбиение на чанки
         chunks_data = chunk_document(parsed_text)
         chunk_records = []
@@ -44,15 +44,17 @@ def process_document(self, doc_id: str):
                 start_pos=start,
                 end_pos=end
             )
+            print(f"Добавляем чанк {chunk.chunk_index} для документа {doc_id}: {len(text)} символов")
             db.add(chunk)
             chunk_records.append(chunk)
+        print(f"Добавлено {len(chunk_records)} чанков для документа {doc_id}")
         db.commit()
         
         # Обновляем ID чанков после commit
         for chunk in chunk_records:
             db.refresh(chunk)
         
-        # Шаг 3: Извлечение сущностей (асинхронно)
+        # Шаг 3: Извлечение сущностей
         document_service.update_status(db, UUID(doc_id), DocumentStatus.ENTITIES_EXTRACTED)
         all_entities = []
         
@@ -71,6 +73,7 @@ def process_document(self, doc_id: str):
                     confidence=ent.get("confidence", 1.0),
                     context=ent.get("context", "")[:1000]
                 )
+                print(f"Добавляем сущность '{entity.name}' для документа {doc_id}, чанк {chunk.chunk_index}")
                 db.add(entity)
                 all_entities.append({
                     "id": str(entity.id),
@@ -80,6 +83,7 @@ def process_document(self, doc_id: str):
                     "confidence": ent.get("confidence", 1.0),
                     "context": ent.get("context", "")
                 })
+            print(f"Извлечено {len(entities)} сущностей из чанка {chunk.chunk_index} документа {doc_id}")
             db.commit()
         
         # Шаг 4: Извлечение связей
@@ -88,7 +92,7 @@ def process_document(self, doc_id: str):
         
         for chunk in chunk_records:
             chunk_entities = [e for e in all_entities if str(chunk.id) in [str(ce.chunk_id) for ce in db.query(Entity).filter(Entity.chunk_id == chunk.id).all()]]
-            
+            print(f"Извлекаем связи из чанка {chunk.chunk_index} документа {doc_id}, найдено {len(chunk_entities)} сущностей")
             if len(chunk_entities) >= 2:
                 relations = extraction_service.extract_relations(chunk.text, chunk_entities)
                 
@@ -122,6 +126,7 @@ def process_document(self, doc_id: str):
                             "confidence": rel.get("confidence", 1.0),
                             "context": rel.get("context", "")
                         })
+                    print(f"Добавляем связь '{rel['source']}' -> '{rel['target']}' для документа {doc_id}, чанк {chunk.chunk_index}")
                 db.commit()
         
         # Шаг 5: Индексация векторов

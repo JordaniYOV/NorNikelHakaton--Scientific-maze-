@@ -29,6 +29,20 @@ class EntityType(str, Enum):
     UNKNOWN = "Unknown"
 
 
+class TaskType(str, Enum):
+    PARSE = "parse"
+    EXTRACT_ENTITIES = "extract_entities"
+    EXTRACT_RELATIONS = "extract_relations"
+    INDEX_VECTORS = "index_vectors"
+    BUILD_GRAPH = "build_graph"
+
+
+class TaskStatus(str, Enum):
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
 # === Document ===
 class DocumentUploadResponse(BaseModel):
     doc_id: UUID

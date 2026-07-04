@@ -5,7 +5,8 @@ from qdrant_client.models import PointStruct, Distance, VectorParams
 
 from ...core.config import settings
 from ...db.database import qdrant_client
-from ...agents.yandex_llm import yandex_llm
+# from ...agents.yandex_llm import yandex_llm
+from ...agents.local_llm import local_llm
 
 
 class IndexingService:
@@ -13,7 +14,7 @@ class IndexingService:
     
     def __init__(self):
         self.collection_name = settings.QDRANT_COLLECTION
-        self.model = yandex_llm
+        self.model = local_llm
         self.vector_size = 1024
         self._ensure_collection()
     
@@ -37,7 +38,8 @@ class IndexingService:
         if self.model is None:
             raise RuntimeError("Модель эмбеддингов не инициализирована")
         try:
-            embedding = self.model.embeddings(text)
+            print(f"Получаем эмбеддинг для текста: {text}...")
+            embedding = self.model.embed_single(text=text)
 
             import math
             norm = math.sqrt(sum(x*x for x in embedding))

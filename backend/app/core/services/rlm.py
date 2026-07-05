@@ -148,7 +148,7 @@ class RLM:
 - verify: проверить противоречия
 - gap_find: найти недостающую информацию
 
-Ответь в формате JSON:
+Ответь в формате JSON. Вот пример:
 {{
     "subtasks": [
         {{
@@ -492,15 +492,25 @@ class RLM:
             
             if r.get("type") == "search":
                 search_res = result.get("results", {})
-                for item in search_res.get("results", []):
+                results_list = search_res.get("results", []) 
+                for item in results_list:
+                    if isinstance(item, dict):
+                        text = item.get("text", "")[:500]
+                        score = item.get("score", 0)
+                        doc_id = item.get("doc_id", "")
+                    else:
+                        text = str(item)[:500]
+                        score = 0
+                        doc_id = ""
+                    
                     all_data.append({
-                        "text": item.get("text", "")[:500],
-                        "score": item.get("score", 0),
-                        "doc_id": item.get("doc_id", "")
+                        "text": text,
+                        "score": score,
+                        "doc_id": doc_id
                     })
                     sources.append({
-                        "doc_id": item.get("doc_id", ""),
-                        "text": item.get("text", "")[:300]
+                        "doc_id": doc_id,
+                        "text": text[:300]
                     })
             
             elif r.get("type") == "compare":

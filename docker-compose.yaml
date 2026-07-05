@@ -110,22 +110,22 @@ services:
     volumes:
       - redis_data:/data
   
-  ollama-generate:
-    image: ollama/ollama:latest
-    container_name: ollama-generate
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama-models:/root/.ollama
-    entrypoint: >
-      sh -c "
-        ollama serve &
-        sleep 15 &&
-        ollama pull qwen2.5:3b &&
-        echo 'Generate модель загружена' &&
-        wait
-      "
-    restart: unless-stopped
+  # ollama-generate:
+  #   image: ollama/ollama:latest
+  #   container_name: ollama-generate
+  #   ports:
+  #     - "11434:11434"
+  #   volumes:
+  #     - ollama-models:/root/.ollama
+  #   entrypoint: >
+  #     sh -c "
+  #       ollama serve &
+  #       sleep 15 &&
+  #       ollama pull qwen2.5:3b &&
+  #       echo 'Generate модель загружена' &&
+  #       wait
+  #     "
+  #   restart: unless-stopped
 
   # Embed модель — лёгкая, на CPU
   ollama-embed:
